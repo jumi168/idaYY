@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>點餐系統後台管理 (NEW)</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5; /* Indigo 600 */
+            --primary-hover: #4338CA;
+            --secondary: #10B981; /* Emerald 500 */
+            --danger: #EF4444; /* Red 500 */
+            --danger-hover: #DC2626;
+            --background: #F3F4F6;
+            --surface: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --radius-md: 0.5rem;
+            --radius-lg: 1rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar / Navigation */
+        .sidebar {
+            width: 250px;
+            background-color: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-items {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .nav-item.active {
+            background-color: #EEF2FF;
+            color: var(--primary);
+        }
+
+        .nav-item:hover:not(.active) {
+            background-color: var(--background);
+            color: var(--text-main);
+        }
+
+        /* Main Content area */
+        .main-content {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background-color: white;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-edit {
+            background-color: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-edit:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Dashboard Cards */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Table Design */
+        .table-container {
+            background-color: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-controls {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #FAFAFA;
+        }
+
+        .search-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            width: 250px;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem 1.5rem;
+        }
+
+        th {
+            background-color: #F9FAFB;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        tr {
+            transition: background-color 0.15s ease;
+        }
+
+        tr:hover {
+            background-color: #F9FAFB;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.meal {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .badge.drink {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Modal Design */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background-color: var(--surface);
+            width: 100%;
+            max-width: 500px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 0.625rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+
+        .modal-footer {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background-color: #F9FAFB;
+        }
+
+        /* Blank State */
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            Ordermeal PM
+        </div>
+        <ul class="nav-items">
+            <li class="nav-item active">最新訂單管理中心</li>
+            <li class="nav-item">餐點數據分析</li>
+            <li class="nav-item">系統設定</li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="header">
+            <h1 class="page-title">訂單管理中心 (NEW版)</h1>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-edit" onclick="fetchGoogleSheet()" id="syncBtn">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    同步雲端 Excel (新版)
+                </button>
+                <button class="btn btn-primary" onclick="openModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                    新增訂單
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard-cards">
+            <div class="card">
+                <span class="card-title">總訂單數</span>
+                <span class="card-value" id="card-total">0</span>
+            </div>
+            <div class="card">
+                <span class="card-title">已點餐總數</span>
+                <span class="card-value" id="card-meals">0</span>
+            </div>
+            <div class="card">
+                <span class="card-title">已點飲料總數</span>
+                <span class="card-value" id="card-drinks">0</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-controls">
+                <h3 style="font-weight: 600; font-size: 1.125rem;">訂單列表</h3>
+                <input type="text" class="search-input" placeholder="搜尋姓名或餐點..." id="searchInput">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>NO</th>
+                        <th>姓名</th>
+                        <th>主餐 (EAT)</th>
+                        <th>飲料 (DRINK)</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be populated via JS -->
+                </tbody>
+            </table>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                暫無訂單資料
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Add/Edit -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">新增訂單</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="orderId">
+                <div class="form-group">
+                    <label for="empNo">NO (編號)</label>
+                    <input type="text" id="empNo" placeholder="系統自動產生或輸入編號">
+                </div>
+                <div class="form-group">
+                    <label for="empName">姓名</label>
+                    <input type="text" id="empName" placeholder="請輸入點餐人姓名" required>
+                </div>
+                <div class="form-group">
+                    <label for="mealType">主餐選擇 (EAT)</label>
+                    <select id="mealType">
+                        <option value="">未選擇</option>
+                        <option value="1.總匯特餐">1.總匯特餐</option>
+                        <option value="2.雞腿特餐">2.雞腿特餐</option>
+                        <option value="3.排骨特餐">3.排骨特餐</option>
+                        <option value="4.叉燒特餐">4.叉燒特餐</option>
+                        <option value="5.素食">5.素食</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="drinkType">飲料選擇 (DRINK)</label>
+                    <select id="drinkType">
+                        <option value="">未選擇 或 不選擇</option>
+                        <option value="A.青四季春無糖微冰">A.青四季春無糖微冰</option>
+                        <option value="B.紅柚翡翠微糖微冰">B.紅柚翡翠微糖微冰</option>
+                        <option value="C.珍珠奶茶微糖微冰">C.珍珠奶茶微糖微冰</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" style="border: none" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveOrder()">儲存訂單</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const newGoogleSheetUrl = 'https://docs.google.com/spreadsheets/d/1RHHbnM8Ocb1KdQ8oc-29_f_WSE4R0v52-nv9qriG1WE/gviz/tq?tqx=out:json&gid=0';
+        const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbymDixpc1PBigdwyI0CwpA6rubsGngk52OgtqOY9o01go1ACgzzYEYHDahDD6kRa9Qo/exec';
+
+        // Load from localStorage initially
+        let orders = JSON.parse(localStorage.getItem('ordermeal_data_new')) || [];
+        let currentId = orders.length > 0 ? Math.max(...orders.map(o => (parseInt(o.id) || 0) )) : 0;
+
+        function saveToStorage() {
+            localStorage.setItem('ordermeal_data_new', JSON.stringify(orders));
+        }
+
+        // Fetch Cloud Data from NEW Sheet
+        async function fetchGoogleSheet() {
+            const syncBtn = document.getElementById('syncBtn');
+            syncBtn.style.opacity = '0.7';
+            syncBtn.innerText = '同步中...';
+            
+            try {
+                const response = await fetch(newGoogleSheetUrl);
+                const text = await response.text();
+                // extract json
+                const jsonText = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\)/)[1];
+                const data = JSON.parse(jsonText);
+                
+                const rows = data.table.rows;
+                const newOrders = [];
+                
+                rows.forEach((row, index) => {
+                    // skip header logically if NO is 'NO'
+                    const code = row.c[0] ? row.c[0].v : '';
+                    if (code === 'NO' || code === null || code === '') return;
+                    
+                    const name = row.c[1] ? row.c[1].v : '';
+                    const meal = row.c[2] ? row.c[2].v : '';
+                    const drink = row.c[3] ? row.c[3].v : '';
+                    
+                    newOrders.push({
+                        id: code, 
+                        name, meal, drink
+                    });
+                });
+                
+                orders = newOrders;
+                currentId = orders.length; // rough max id logic
+                saveToStorage();
+                renderTable();
+                
+                setTimeout(() => {
+                    syncBtn.style.opacity = '1';
+                    syncBtn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> 同步完成`;
+                    setTimeout(() => {
+                        syncBtn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> 同步雲端 Excel (新版)`;
+                    }, 2000);
+                }, 500);
+                
+            } catch (err) {
+                console.error('Fetch Google Sheet Error:', err);
+                alert('無法從雲端讀取資料。顯示本機暫存歷史。');
+                syncBtn.style.opacity = '1';
+                syncBtn.innerText = '同步失敗';
+            }
+        }
+
+        // Elements
+        const tableBody = document.getElementById('tableBody');
+        const emptyState = document.getElementById('emptyState');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const searchInput = document.getElementById('searchInput');
+        
+        // Form Inputs
+        const formIdInput = document.getElementById('orderId'); // internal hidden
+        const formNo = document.getElementById('empNo'); // UI exposed NO
+        const formName = document.getElementById('empName');
+        const formMeal = document.getElementById('mealType');
+        const formDrink = document.getElementById('drinkType');
+
+        // Render Table
+        function renderTable(data = orders) {
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+                data.forEach((order) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${order.id}</td>
+                        <td style="font-weight: 500">${order.name}</td>
+                        <td>${order.meal ? `<span class="badge meal">${order.meal}</span>` : '-'}</td>
+                        <td>${order.drink ? `<span class="badge drink">${order.drink}</span>` : '-'}</td>
+                        <td class="actions">
+                            <button class="btn btn-edit" onclick="editOrder('${order.id}')">修改</button>
+                            <button class="btn btn-danger" onclick="deleteOrder('${order.id}')">刪除</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            // Update stats
+            document.getElementById('card-total').innerText = orders.length;
+            document.getElementById('card-meals').innerText = orders.filter(o => o.meal).length;
+            document.getElementById('card-drinks').innerText = orders.filter(o => o.drink).length;
+            
+            if (data === orders) {
+                saveToStorage();
+            }
+        }
+
+        // Modal Logic
+        function openModal(isEdit = false) {
+            modalOverlay.classList.add('active');
+            if (!isEdit) {
+                document.getElementById('modalTitle').innerText = '新增訂單';
+                formIdInput.value = '';
+                formNo.value = (orders.length > 0 ? parseInt(Math.max(...orders.map(o => parseInt(o.id) || 0))) + 1 : 1);
+                formName.value = '';
+                formMeal.value = '';
+                formDrink.value = '';
+            }
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        async function saveOrder() {
+            if (!formName.value.trim()) {
+                alert('請輸入姓名');
+                return;
+            }
+
+            const isEdit = formIdInput.value !== '';
+            let orderData;
+            
+            if (isEdit) {
+                const id = formIdInput.value;
+                const orderIndex = orders.findIndex(o => String(o.id) === String(id));
+                if(orderIndex > -1) {
+                    orderData = {
+                        id: formNo.value,
+                        name: formName.value.trim(),
+                        meal: formMeal.value,
+                        drink: formDrink.value
+                    };
+                    orders[orderIndex] = orderData;
+                }
+            } else {
+                orderData = {
+                    id: formNo.value || (orders.length + 1),
+                    name: formName.value.trim(),
+                    meal: formMeal.value,
+                    drink: formDrink.value
+                };
+                orders.push(orderData);
+            }
+
+            // Trigger Apps Script Update if configured, otherwise just saves locally
+            try {
+                const formData = new URLSearchParams();
+                formData.append("action", isEdit ? "update" : "add");
+                formData.append("id", orderData.id);
+                formData.append("name", orderData.name);
+                formData.append("meal", orderData.meal);
+                formData.append("drink", orderData.drink);
+                
+                const targetUrl = appsScriptUrl + "?" + formData.toString();
+                fetch(targetUrl, { method: "GET", mode: "no-cors" });
+            } catch (e) {
+                console.error("同步到 Google Sheets 失敗: ", e);
+            }
+
+            alert('✅ 儲存成功！');
+            closeModal();
+            renderTable();
+        }
+
+        function editOrder(id) {
+            const order = orders.find(o => String(o.id) === String(id));
+            if (order) {
+                document.getElementById('modalTitle').innerText = '修改訂單';
+                formIdInput.value = order.id;
+                formNo.value = order.id;
+                formName.value = order.name;
+                formMeal.value = order.meal;
+                formDrink.value = order.drink;
+                openModal(true);
+            }
+        }
+
+        async function deleteOrder(id) {
+            if (confirm('確定要刪除這筆訂單嗎？')) {
+                try {
+                    const formData = new URLSearchParams();
+                    formData.append("action", "delete");
+                    formData.append("id", id);
+                    
+                    const targetUrl = appsScriptUrl + "?" + formData.toString();
+                    fetch(targetUrl, { method: "GET", mode: "no-cors" });
+                } catch (e) {
+                    console.error("刪除 Google Sheets 資料失敗: ", e);
+                }
+                
+                orders = orders.filter(o => String(o.id) !== String(id));
+                renderTable();
+            }
+        }
+
+        // Search Logic
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = orders.filter(o => 
+                o.name.toLowerCase().includes(term) || 
+                (o.meal && o.meal.toLowerCase().includes(term)) ||
+                (o.drink && o.drink.toLowerCase().includes(term))
+            );
+            renderTable(filtered);
+        });
+
+        // Init: attempt sync on load immediately
+        if (orders.length === 0) {
+            fetchGoogleSheet();
+        } else {
+            renderTable();
+            // Automatically silently sync in background
+            fetchGoogleSheet();
+        }
+    </script>
+</body>
+</html>
