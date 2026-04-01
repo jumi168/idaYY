@@ -510,7 +510,7 @@
 
     <script>
         // Initial Data mimicking the provided Google Sheet
-        let orders = [
+        const defaultOrders = [
             { id: 1, name: "高念平", meal: "原味椒鹽炸雞霸氣會議餐盒", drink: "桂香青檸粉粿 無糖微冰", status: "OK", remarks: "冬天不洗澡也要洗衣服吧" },
             { id: 2, name: "游國楷", meal: "油蔥舒肥雞霸氣會議餐盒", drink: "原片初露青茶 無糖微冰", status: "OK", remarks: "" },
             { id: 3, name: "謝楷評", meal: "招牌椒麻豬排霸氣會議餐盒", drink: "珍珠大正紅茶拿鐵 微糖微冰", status: "OK", remarks: "" },
@@ -522,7 +522,14 @@
             { id: 9, name: "吳柔潔", meal: "油蔥舒肥雞霸氣會議餐盒", drink: "桂香青檸粉粿 無糖微冰", status: "OK", remarks: "" }
         ];
 
-        let currentId = 9;
+        // Load from localStorage or use default mock data
+        let orders = JSON.parse(localStorage.getItem('ordermeal_data')) || defaultOrders;
+        let currentId = orders.length > 0 ? Math.max(...orders.map(o => o.id)) : 0;
+
+        // Save data to localStorage (local "cloud" simulation)
+        function saveToStorage() {
+            localStorage.setItem('ordermeal_data', JSON.stringify(orders));
+        }
 
         // Elements
         const tableBody = document.getElementById('tableBody');
@@ -547,18 +554,18 @@
                 emptyState.style.display = 'none';
                 data.forEach((order, index) => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = \`
-                        <td>\${index + 1}</td>
-                        <td style="font-weight: 500">\${order.name}</td>
-                        <td>\${order.meal ? \`<span class="badge meal">\${order.meal}</span>\` : '-'}</td>
-                        <td>\${order.drink ? \`<span class="badge drink">\${order.drink}</span>\` : '-'}</td>
-                        <td><span style="color: var(--secondary); font-weight: 600;">\${order.status}</span></td>
-                        <td style="color: var(--text-muted); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="\${order.remarks}">\${order.remarks || '-'}</td>
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td style="font-weight: 500">${order.name}</td>
+                        <td>${order.meal ? `<span class="badge meal">${order.meal}</span>` : '-'}</td>
+                        <td>${order.drink ? `<span class="badge drink">${order.drink}</span>` : '-'}</td>
+                        <td><span style="color: var(--secondary); font-weight: 600;">${order.status}</span></td>
+                        <td style="color: var(--text-muted); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${order.remarks}">${order.remarks || '-'}</td>
                         <td class="actions">
-                            <button class="btn btn-edit" onclick="editOrder(\${order.id})">編輯</button>
-                            <button class="btn btn-danger" onclick="deleteOrder(\${order.id})">刪除</button>
+                            <button class="btn btn-edit" onclick="editOrder(${order.id})">編輯</button>
+                            <button class="btn btn-danger" onclick="deleteOrder(${order.id})">刪除</button>
                         </td>
-                    \`;
+                    `;
                     tableBody.appendChild(tr);
                 });
             }
@@ -567,6 +574,11 @@
             document.getElementById('card-total').innerText = orders.length;
             document.getElementById('card-meals').innerText = orders.filter(o => o.meal).length;
             document.getElementById('card-drinks').innerText = orders.filter(o => o.drink).length;
+            
+            // Sync to local storage every time we render base data
+            if (data === orders) {
+                saveToStorage();
+            }
         }
 
         // Modal Logic
