@@ -515,7 +515,8 @@
     </div>
 
     <script>
-        const googleSheetUrl = 'https://docs.google.com/spreadsheets/d/1pHB-N2xeMXa7VyG6Ha5VzH0l0NeMu6r0Nt-G39NQVNU/gviz/tq?tqx=out:json&gid=323436774';
+        const googleSheetUrl = 'https://docs.google.com/spreadsheets/d/1RGLQBEotkJNCBWi-W_UHZEGeH7NN9-_Zi5HeY3wJ8nk/gviz/tq?tqx=out:json&gid=0';
+        const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbymDixpc1PBigdwyI0CwpA6rubsGngk52OgtqOY9o01go1ACgzzYEYHDahDD6kRa9Qo/exec';
 
         // Load from localStorage initially so we don't have empty screen
         let orders = JSON.parse(localStorage.getItem('ordermeal_data')) || [];
@@ -659,36 +660,55 @@
             modalOverlay.classList.remove('active');
         }
 
-        function saveOrder() {
+        async function saveOrder() {
             if (!formName.value.trim()) {
                 alert('請輸入姓名');
                 return;
             }
 
             const isEdit = formId.value !== '';
+            let orderData;
             
             if (isEdit) {
                 const id = parseInt(formId.value);
                 const orderIndex = orders.findIndex(o => o.id === id);
                 if(orderIndex > -1) {
-                    orders[orderIndex] = {
-                        ...orders[orderIndex],
+                    orderData = {
+                        id: id,
                         name: formName.value.trim(),
                         meal: formMeal.value,
                         drink: formDrink.value,
+                        status: orders[orderIndex].status,
                         remarks: formRemarks.value
                     };
+                    orders[orderIndex] = orderData;
                 }
             } else {
                 currentId++;
-                orders.push({
+                orderData = {
                     id: currentId,
                     name: formName.value.trim(),
                     meal: formMeal.value,
                     drink: formDrink.value,
                     status: "OK",
                     remarks: formRemarks.value
-                });
+                };
+                orders.push(orderData);
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append("action", isEdit ? "update" : "add");
+                formData.append("id", orderData.id);
+                formData.append("name", orderData.name);
+                formData.append("meal", orderData.meal);
+                formData.append("drink", orderData.drink);
+                formData.append("status", orderData.status);
+                formData.append("remarks", orderData.remarks);
+                
+                await fetch(appsScriptUrl, { method: "POST", mode: "no-cors", body: formData });
+            } catch (e) {
+                console.error("同步到 Google Sheets 失敗: ", e);
             }
 
             alert('✅ 儲存成功！');
@@ -709,8 +729,17 @@
             }
         }
 
-        function deleteOrder(id) {
+        async function deleteOrder(id) {
             if (confirm('確定要刪除這筆訂單嗎？')) {
+                try {
+                    const formData = new FormData();
+                    formData.append("action", "delete");
+                    formData.append("id", id);
+                    await fetch(appsScriptUrl, { method: "POST", mode: "no-cors", body: formData });
+                } catch (e) {
+                    console.error("刪除 Google Sheets 資料失敗: ", e);
+                }
+                
                 orders = orders.filter(o => o.id !== id);
                 renderTable();
             }
