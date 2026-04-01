@@ -706,11 +706,11 @@
                 formData.append("status", orderData.status);
                 formData.append("remarks", orderData.remarks);
                 
-                await fetch(appsScriptUrl, { 
-                    method: "POST", 
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: formData 
+                // 改用 GET 請求，避免瀏覽器在 302 Redirect 時把 POST Body 吃掉
+                const targetUrl = appsScriptUrl + "?" + formData.toString();
+                await fetch(targetUrl, { 
+                    method: "GET", 
+                    mode: "no-cors"
                 });
             } catch (e) {
                 console.error("同步到 Google Sheets 失敗: ", e);
@@ -740,11 +740,11 @@
                     const formData = new URLSearchParams();
                     formData.append("action", "delete");
                     formData.append("id", id);
-                    await fetch(appsScriptUrl, { 
-                        method: "POST", 
-                        mode: "no-cors", 
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: formData 
+                    
+                    const targetUrl = appsScriptUrl + "?" + formData.toString();
+                    await fetch(targetUrl, { 
+                        method: "GET", 
+                        mode: "no-cors" 
                     });
                 } catch (e) {
                     console.error("刪除 Google Sheets 資料失敗: ", e);
