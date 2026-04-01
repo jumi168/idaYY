@@ -691,7 +691,7 @@
                 });
             }
 
-            alert('✅ 儲存成功！\\n(註：此寫入目前僅暫存於您的瀏覽器中。因為靜態網頁無法直接覆寫您的私人 Google Excel 表單，若需要雲端寫入，需搭配 Google Apps Script 後端開發)');
+            alert('✅ 儲存成功！');
             closeModal();
             renderTable();
         }
@@ -710,7 +710,7 @@
         }
 
         function deleteOrder(id) {
-            if (confirm('確定要刪除這筆訂單嗎？\\n(註：此為瀏覽器端刪除，無法直接更動雲端 Excel 表單)')) {
+            if (confirm('確定要刪除這筆訂單嗎？')) {
                 orders = orders.filter(o => o.id !== id);
                 renderTable();
             }
