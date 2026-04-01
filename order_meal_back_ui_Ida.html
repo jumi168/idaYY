@@ -415,10 +415,16 @@
     <main class="main-content">
         <div class="header">
             <h1 class="page-title">訂單管理中心 (後台)</h1>
-            <button class="btn btn-primary" onclick="openModal()">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-                新增訂單
-            </button>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-edit" onclick="fetchGoogleSheet()" id="syncBtn">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    同步雲端 Excel
+                </button>
+                <button class="btn btn-primary" onclick="openModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                    新增訂單
+                </button>
+            </div>
         </div>
 
         <div class="dashboard-cards">
@@ -509,26 +515,82 @@
     </div>
 
     <script>
-        // Initial Data mimicking the provided Google Sheet
-        const defaultOrders = [
-            { id: 1, name: "高念平", meal: "原味椒鹽炸雞霸氣會議餐盒", drink: "桂香青檸粉粿 無糖微冰", status: "OK", remarks: "冬天不洗澡也要洗衣服吧" },
-            { id: 2, name: "游國楷", meal: "油蔥舒肥雞霸氣會議餐盒", drink: "原片初露青茶 無糖微冰", status: "OK", remarks: "" },
-            { id: 3, name: "謝楷評", meal: "招牌椒麻豬排霸氣會議餐盒", drink: "珍珠大正紅茶拿鐵 微糖微冰", status: "OK", remarks: "" },
-            { id: 4, name: "陳春惠", meal: "原味椒鹽炸雞霸氣會議餐盒", drink: "珍珠大正紅茶拿鐵 微糖微冰", status: "OK", remarks: "" },
-            { id: 5, name: "薛仁奇", meal: "油蔥舒肥雞霸氣會議餐盒", drink: "原片初露青茶 無糖微冰", status: "OK", remarks: "" },
-            { id: 6, name: "劉道鈞", meal: "招牌椒麻豬排霸氣會議餐盒", drink: "原片初露青茶 無糖微冰", status: "OK", remarks: "" },
-            { id: 7, name: "李佳馨", meal: "原味椒鹽炸雞霸氣會議餐盒", drink: "珍珠大正紅茶拿鐵 微糖微冰", status: "OK", remarks: "都AI" },
-            { id: 8, name: "吳文凱", meal: "招牌椒麻豬排霸氣會議餐盒", drink: "珍珠大正紅茶拿鐵 微糖微冰", status: "OK", remarks: "" },
-            { id: 9, name: "吳柔潔", meal: "油蔥舒肥雞霸氣會議餐盒", drink: "桂香青檸粉粿 無糖微冰", status: "OK", remarks: "" }
-        ];
+        const googleSheetUrl = 'https://docs.google.com/spreadsheets/d/1pHB-N2xeMXa7VyG6Ha5VzH0l0NeMu6r0Nt-G39NQVNU/gviz/tq?tqx=out:json&gid=323436774';
 
-        // Load from localStorage or use default mock data
-        let orders = JSON.parse(localStorage.getItem('ordermeal_data')) || defaultOrders;
+        // Load from localStorage initially so we don't have empty screen
+        let orders = JSON.parse(localStorage.getItem('ordermeal_data')) || [];
         let currentId = orders.length > 0 ? Math.max(...orders.map(o => o.id)) : 0;
 
         // Save data to localStorage (local "cloud" simulation)
         function saveToStorage() {
             localStorage.setItem('ordermeal_data', JSON.stringify(orders));
+        }
+
+        // Fetch Cloud Data
+        async function fetchGoogleSheet() {
+            const syncBtn = document.getElementById('syncBtn');
+            syncBtn.style.opacity = '0.7';
+            syncBtn.innerText = '同步中...';
+            
+            try {
+                const response = await fetch(googleSheetUrl);
+                const text = await response.text();
+                // extract json
+                const jsonText = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\)/)[1];
+                const data = JSON.parse(jsonText);
+                
+                const rows = data.table.rows;
+                const newOrders = [];
+                
+                rows.forEach((row) => {
+                    // skip invalid rows (totals or headers)
+                    if (!row.c || !row.c[1] || row.c[0] === null || !row.c[0].v) return;
+                    
+                    const name = row.c[1] ? row.c[1].v : '';
+                    if (name === '02/06' || name === '') return;
+                    
+                    const status = row.c[2] ? row.c[2].v : 'OK';
+                    
+                    let meal = '';
+                    if (row.c[3] && row.c[3].v) meal = '油蔥舒肥雞霸氣會議餐盒';
+                    if (row.c[4] && row.c[4].v) meal = '爺爺蒲燒魚霸氣會議餐盒';
+                    if (row.c[5] && row.c[5].v) meal = '招牌椒麻豬排霸氣會議餐盒';
+                    if (row.c[6] && row.c[6].v) meal = '原味椒鹽炸雞霸氣會議餐盒';
+                    if (row.c[7] && row.c[7].v) meal = '素食';
+                    
+                    let drink = '';
+                    if (row.c[8] && row.c[8].v) drink = '桂香青檸粉粿 無糖微冰';
+                    if (row.c[9] && row.c[9].v) drink = '珍珠大正紅茶拿鐵 微糖微冰';
+                    if (row.c[10] && row.c[10].v) drink = '原片初露青茶 無糖微冰';
+                    
+                    let remarks = '';
+                    if (row.c[23] && row.c[23].v) remarks = row.c[23].v;
+
+                    newOrders.push({
+                        id: newOrders.length + 1, // dynamic sequential ID
+                        name, meal, drink, status, remarks
+                    });
+                });
+                
+                orders = newOrders;
+                currentId = orders.length; // max id
+                saveToStorage();
+                renderTable();
+                
+                setTimeout(() => {
+                    syncBtn.style.opacity = '1';
+                    syncBtn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> 同步完成`;
+                    setTimeout(() => {
+                        syncBtn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> 同步雲端 Excel`;
+                    }, 2000);
+                }, 500);
+                
+            } catch (err) {
+                console.error('Fetch Google Sheet Error:', err);
+                alert('無法從雲端讀取資料，可能是預覽連結權限受限。顯示本機暫存歷史。');
+                syncBtn.style.opacity = '1';
+                syncBtn.innerText = '同步失敗';
+            }
         }
 
         // Elements
@@ -575,7 +637,6 @@
             document.getElementById('card-meals').innerText = orders.filter(o => o.meal).length;
             document.getElementById('card-drinks').innerText = orders.filter(o => o.drink).length;
             
-            // Sync to local storage every time we render base data
             if (data === orders) {
                 saveToStorage();
             }
@@ -607,7 +668,6 @@
             const isEdit = formId.value !== '';
             
             if (isEdit) {
-                // Update
                 const id = parseInt(formId.value);
                 const orderIndex = orders.findIndex(o => o.id === id);
                 if(orderIndex > -1) {
@@ -620,7 +680,6 @@
                     };
                 }
             } else {
-                // Add
                 currentId++;
                 orders.push({
                     id: currentId,
@@ -632,6 +691,7 @@
                 });
             }
 
+            alert('✅ 儲存成功！\\n(註：此寫入目前僅暫存於您的瀏覽器中。因為靜態網頁無法直接覆寫您的私人 Google Excel 表單，若需要雲端寫入，需搭配 Google Apps Script 後端開發)');
             closeModal();
             renderTable();
         }
@@ -650,7 +710,7 @@
         }
 
         function deleteOrder(id) {
-            if (confirm('確定要刪除這筆訂單嗎？此操作無法恢復。')) {
+            if (confirm('確定要刪除這筆訂單嗎？\\n(註：此為瀏覽器端刪除，無法直接更動雲端 Excel 表單)')) {
                 orders = orders.filter(o => o.id !== id);
                 renderTable();
             }
@@ -668,8 +728,14 @@
             renderTable(filtered);
         });
 
-        // Init
-        renderTable();
+        // Init: attempt sync on load immediately
+        if (orders.length === 0) {
+            fetchGoogleSheet();
+        } else {
+            renderTable();
+            // Automatically silently sync in background
+            fetchGoogleSheet();
+        }
     </script>
 </body>
 </html>
