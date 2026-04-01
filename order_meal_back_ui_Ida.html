@@ -697,7 +697,7 @@
             }
 
             try {
-                const formData = new FormData();
+                const formData = new URLSearchParams();
                 formData.append("action", isEdit ? "update" : "add");
                 formData.append("id", orderData.id);
                 formData.append("name", orderData.name);
@@ -706,7 +706,12 @@
                 formData.append("status", orderData.status);
                 formData.append("remarks", orderData.remarks);
                 
-                await fetch(appsScriptUrl, { method: "POST", mode: "no-cors", body: formData });
+                await fetch(appsScriptUrl, { 
+                    method: "POST", 
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData 
+                });
             } catch (e) {
                 console.error("同步到 Google Sheets 失敗: ", e);
             }
@@ -732,10 +737,15 @@
         async function deleteOrder(id) {
             if (confirm('確定要刪除這筆訂單嗎？')) {
                 try {
-                    const formData = new FormData();
+                    const formData = new URLSearchParams();
                     formData.append("action", "delete");
                     formData.append("id", id);
-                    await fetch(appsScriptUrl, { method: "POST", mode: "no-cors", body: formData });
+                    await fetch(appsScriptUrl, { 
+                        method: "POST", 
+                        mode: "no-cors", 
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: formData 
+                    });
                 } catch (e) {
                     console.error("刪除 Google Sheets 資料失敗: ", e);
                 }
